@@ -1,11 +1,11 @@
 name = "climate_batch"
 run = "docker run --rm -v \"$PWD/run:/run\" ${IMAGE} ${ARGS}"
 image = "financepy-runner:local"
-args = ["--in", "{input:finance_py}", "--out", "{output:finance_py}"]
+args = ["--in", "{input:finance_py_input}", "--out", "{output:output_data}"]
 
 [[inputs]]
 # TODO: this should eventually support URLs as well as local files
-name = "finance_py"
+name = "finance_py_input"
 
 [inputs.schema]
 type = "object"
