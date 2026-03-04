@@ -1,9 +1,56 @@
 #!/usr/bin/env python3
-"""runner.py — JSON-in/JSON-out wrapper for FinancePy bond pricing."""
+"""runner.py — JSON-in/JSON-out FinancePy bond pricing wrapper.
 
-# TO RUN:
-# From inside the repo root:
-# `python runner.py < finance_py_input.json`
+Role in the FaIR → DicePy → FinancePy pipeline
+────────────────────────────────────────────────
+DicePy emits a climate risk premium (a decimal yield spread) for one or more
+emissions scenarios.  This script prices a fixed-coupon bond using the
+FinancePy library, applying that climate risk premium as extra yield above a
+baseline YTM.
+
+When run standalone, supply a full bond spec (including ytm or clean_price)
+in the input JSON.  When chained after DicePy, only the DicePy output fields
+are required — bond parameters fall back to built-in defaults and the YTM is
+resolved from adjusted_ytm (preferred) or climate_risk_premium.
+
+TO RUN:
+  From inside the repo root:
+    python runner.py damage_estimates.json
+  Or piped:
+    python runner.py < damage_estimates.json
+
+INPUT JSON keys:
+  issue_date        list[int]  [year, month, day] of bond issue      (default: [2024,1,1])
+  maturity_date     list[int]  [year, month, day] of maturity        (default: [2034,1,1])
+  settlement_date   list[int]  [year, month, day] of settlement      (default: [2024,1,3])
+  coupon_rate       float      annual coupon as a decimal             (default: 0.04)
+  frequency         str        coupon frequency — "annual",           (default: "semi_annual")
+                               "semi_annual", "quarterly", "monthly"
+  day_count         str        day-count convention — "act_act_isda", (default: "act_act_isda")
+                               "thirty_e_360", "act_360", "act_365f"
+  ytm               float      yield-to-maturity as a decimal;        (optional)
+                               if absent, resolved from DicePy fields
+                               below.  Provide either ytm or
+                               clean_price (not both).
+  clean_price       float      clean price per 100 face value;        (optional)
+                               used to back-solve ytm when ytm is
+                               absent.  Ignored when ytm is present.
+  adjusted_ytm      dict       {scenario: {config: float}} from       (optional)
+                               DicePy; collapsed to a mean scalar and
+                               used as ytm when ytm is absent.
+  climate_risk_premium dict    {scenario: {config: float}} from       (optional)
+                               DicePy; used as ytm when both ytm and
+                               adjusted_ytm are absent.
+
+OUTPUT JSON keys:
+  clean_price         float   clean price per 100 face value
+  dirty_price         float   dirty price (clean + accrued interest)
+  accrued_interest    float   accrued coupon since last payment date
+  macauley_duration   float   Macaulay duration in years
+  modified_duration   float   modified duration (price sensitivity to yield)
+  convexity           float   convexity (second-order price/yield sensitivity)
+  ytm                 float   yield-to-maturity used (or back-solved) for pricing
+"""
 
 import argparse
 import json
