@@ -11,7 +11,13 @@ name = "damage_estimates"
 
 [inputs.schema]
 type = "object"
-required = ["issue_date", "maturity_date", "settlement_date", "coupon_rate", "frequency", "day_count", "ytm"]
+# No required fields: when chaining from DicePy, only climate risk fields
+# (climate_risk_premium, damage_fraction, etc.) are present — bond parameters
+# (issue_date, maturity_date, coupon_rate, etc.) are not in that output.
+# The runner is expected to supply defaults for any missing bond parameters,
+# making this model composable both standalone (full params via file) and
+# as a downstream step (climate risk data from DicePy, bond params defaulted).
+required = []
 
 [[outputs]]
 name = "bond_metrics"

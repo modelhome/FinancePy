@@ -38,6 +38,29 @@ except ModuleNotFoundError as exc:
     raise
 
 
+# ---------------------------------------------------------------------------
+# Default bond parameters used when FinancePy runs as a downstream step
+# (e.g., after DicePy in a FaIR → DicePy → FinancePy chain). In that case
+# only climate risk fields arrive in the input; bond specifics are absent.
+# When running standalone, supply these keys in the input JSON to override.
+# ---------------------------------------------------------------------------
+DEFAULT_ISSUE_DATE = [2024, 1, 1]
+DEFAULT_MATURITY_DATE = [2034, 1, 1]    # 10-year bond
+DEFAULT_SETTLEMENT_DATE = [2024, 1, 3]  # T+2 settlement
+DEFAULT_COUPON_RATE = 0.04              # 4 % annual coupon
+
+
+def _mean_nested(d: dict) -> float:
+    """Collapse a {scenario: {config: float}} dict to a single mean value.
+
+    DicePy outputs climate_risk_premium and adjusted_ytm in this shape.
+    We average across all scenario/config combinations to get one scalar
+    yield suitable for a single bond pricing call.
+    """
+    values = [v for inner in d.values() for v in inner.values()]
+    return sum(values) / len(values) if values else 0.0
+
+
 FREQ_MAP = {
     "annual": FrequencyTypes.ANNUAL,
     "semi_annual": FrequencyTypes.SEMI_ANNUAL,
@@ -54,22 +77,36 @@ DC_MAP = {
 
 
 def run(params: dict) -> dict:
-    # Parse input
-    issue = params["issue_date"]  # [year, month, day]
-    mat = params["maturity_date"]
-    settle = params["settlement_date"]
+    # Bond parameters — use input values if present, fall back to defaults.
+    # Defaults exist so this runner can be chained after DicePy without
+    # requiring a full bond spec in the input.
+    issue = params.get("issue_date", DEFAULT_ISSUE_DATE)      # [year, month, day]
+    mat = params.get("maturity_date", DEFAULT_MATURITY_DATE)
+    settle = params.get("settlement_date", DEFAULT_SETTLEMENT_DATE)
 
     issue_dt = Date(issue[2], issue[1], issue[0])
     maturity_dt = Date(mat[2], mat[1], mat[0])
     settle_dt = Date(settle[2], settle[1], settle[0])
 
-    coupon = params["coupon_rate"]
+    coupon = params.get("coupon_rate", DEFAULT_COUPON_RATE)
     freq = FREQ_MAP[params.get("frequency", "semi_annual")]
     dc = DC_MAP[params.get("day_count", "act_act_isda")]
 
     bond = Bond(issue_dt, maturity_dt, coupon, freq, dc)
 
+    # ytm resolution: prefer an explicit scalar in the input (standalone use).
+    # When chaining from DicePy, fall back to adjusted_ytm (baseline YTM +
+    # climate risk premium) if available, then climate_risk_premium alone.
+    # Both are {scenario: {config: float}} dicts — _mean_nested collapses
+    # them to a single representative scalar for a single bond pricing call.
     ytm = params.get("ytm")
+    if ytm is None:
+        for key in ("adjusted_ytm", "climate_risk_premium"):
+            val = params.get(key)
+            if isinstance(val, dict):
+                ytm = _mean_nested(val)
+                break
+
     clean_price = params.get("clean_price")
 
     result = {}
