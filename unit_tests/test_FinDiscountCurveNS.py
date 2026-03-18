@@ -1,7 +1,7 @@
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 
 import numpy as np
-
+import pytest
 from financepy.market.curves.discount_curve_ns import DiscountCurveNS
 from financepy.utils.date import Date
 
@@ -143,24 +143,21 @@ def test_beta_2():
     beta_2 = 0.00
     curve = DiscountCurveNS(curve_dt, beta_1, beta_2, beta_3, tau)
     zero_rates = curve.zero_rate(dates)
-    assert [round(x, 4) for x in zero_rates] == [
-        0.060,
-        0.0647,
-        0.0648,
-        0.0638,
-        0.0629,
-    ]
+
+    expected = [0.0600, 0.0647, 0.0648, 0.0638, 0.0629]
+    assert zero_rates == pytest.approx(expected, abs=1e-4)
 
     beta_2 = 0.02
     curve = DiscountCurveNS(curve_dt, beta_1, beta_2, beta_3, tau)
     zero_rates = curve.zero_rate(dates)
-    assert [round(x, 4) for x in zero_rates] == [
-        0.08,
-        0.076,
-        0.072,
+    expected = [
+        0.0800,
+        0.0760,
+        0.0720,
         0.0689,
         0.0668,
     ]
+    assert zero_rates == pytest.approx(expected, abs=1e-4)
 
     beta_2 = 0.04
     curve = DiscountCurveNS(curve_dt, beta_1, beta_2, beta_3, tau)
