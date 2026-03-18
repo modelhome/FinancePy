@@ -41,6 +41,15 @@ INPUT JSON keys:
   climate_risk_premium dict    {scenario: {config: float}} from       (optional)
                                DicePy; used as ytm when both ytm and
                                adjusted_ytm are absent.
+  insured_aai_usd   float      Average Annual Insured Loss from        (optional)
+                               OasisLMF; combined with
+                               total_insured_value_usd (or
+                               total_exposed_value_usd) to derive an
+                               expected-loss yield spread added to
+                               risk_free_rate.
+  risk_free_rate    float      baseline risk-free rate used when       (optional)
+                               deriving YTM from OasisLMF EL.
+                               (default: 0.045)
 
 OUTPUT JSON keys:
   clean_price         float   clean price per 100 face value
@@ -95,6 +104,7 @@ DEFAULT_ISSUE_DATE = [2024, 1, 1]
 DEFAULT_MATURITY_DATE = [2034, 1, 1]    # 10-year bond
 DEFAULT_SETTLEMENT_DATE = [2024, 1, 3]  # T+2 settlement
 DEFAULT_COUPON_RATE = 0.04              # 4 % annual coupon
+DEFAULT_RISK_FREE_RATE = 0.045          # baseline risk-free rate when deriving YTM from OasisLMF EL
 
 
 def _mean_nested(d: dict) -> float:
@@ -153,6 +163,14 @@ def run(params: dict) -> dict:
             if isinstance(val, dict):
                 ytm = _mean_nested(val)
                 break
+    if ytm is None and "insured_aai_usd" in params:
+        # OasisLMF input: derive YTM from expected loss rate + risk-free rate.
+        # el_rate = Average Annual Insured Loss / Total Insured Value
+        tiv = params.get("total_insured_value_usd") or params.get("total_exposed_value_usd")
+        if tiv and float(tiv) > 0:
+            el_rate = float(params["insured_aai_usd"]) / float(tiv)
+            risk_free = float(params.get("risk_free_rate", DEFAULT_RISK_FREE_RATE))
+            ytm = risk_free + el_rate
 
     clean_price = params.get("clean_price")
 
