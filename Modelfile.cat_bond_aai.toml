@@ -16,6 +16,10 @@ run = "docker run --rm -v \"$PWD/run:/run\" ${IMAGE} ${ARGS} > run/bond_metrics.
 image = "domokane/financepy:latest"
 args = ["{input:damage_estimates}"]
 
+[resources]
+memory = "4Gi"
+cpu = "2"
+
 [[inputs]]
 name = "damage_estimates"
 description = "Insurance loss distribution after OasisLMF FM: AAI, EP curve, per-event insured losses."
