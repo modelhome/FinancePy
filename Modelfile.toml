@@ -5,6 +5,10 @@ image = "domokane/financepy:latest"
 # args = ["--in", "{input:finance_py_input}", "--out", "{output:output_data}"]
 args = ["{input:damage_estimates}", "{input:hurricane_frequency}"]
 
+[resources]
+memory = "4Gi"
+cpu = "2"
+
 [[inputs]]
 name = "damage_estimates"
 
