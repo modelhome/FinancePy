@@ -39,6 +39,8 @@ type = "object"
 # event_insured_loss_table is required here (unlike cat_bond_aai) because
 # the rescaling needs each event's frequency to derive lambda_implicit.
 required = ["insured_aai_usd", "event_insured_loss_table"]
+properties.insured_aai_usd.type = "number"
+properties.event_insured_loss_table.type = "array"
 
 [[inputs]]
 name = "hurricane_frequency"
@@ -47,6 +49,7 @@ description = "Independently-modelled annual landfall rate (e.g. from hurricane-
 [inputs.schema]
 type = "object"
 required = ["lambda_annual"]
+properties.lambda_annual.type = "number"
 
 [[outputs]]
 name = "bond_metrics"
@@ -54,3 +57,10 @@ name = "bond_metrics"
 [outputs.schema]
 type = "object"
 required = ["clean_price", "dirty_price", "accrued_interest", "macauley_duration", "modified_duration", "convexity", "ytm"]
+properties.clean_price.type = "number"
+properties.dirty_price.type = "number"
+properties.accrued_interest.type = "number"
+properties.macauley_duration.type = "number"
+properties.modified_duration.type = "number"
+properties.convexity.type = "number"
+properties.ytm.type = "number"

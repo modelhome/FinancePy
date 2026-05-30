@@ -43,6 +43,7 @@ type = "object"
 # present in every DicePy run; adjusted_ytm and ytm are accepted but
 # optional fall-throughs the runner also recognises.
 required = ["climate_risk_premium"]
+properties.climate_risk_premium.type = "number"
 
 [[outputs]]
 name = "bond_metrics"
@@ -50,3 +51,10 @@ name = "bond_metrics"
 [outputs.schema]
 type = "object"
 required = ["clean_price", "dirty_price", "accrued_interest", "macauley_duration", "modified_duration", "convexity", "ytm"]
+properties.clean_price.type = "number"
+properties.dirty_price.type = "number"
+properties.accrued_interest.type = "number"
+properties.macauley_duration.type = "number"
+properties.modified_duration.type = "number"
+properties.convexity.type = "number"
+properties.ytm.type = "number"
