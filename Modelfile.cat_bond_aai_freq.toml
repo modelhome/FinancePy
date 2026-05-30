@@ -12,8 +12,8 @@
 # CLIMADA's modelled set and a historical-data Poisson fit (e.g. from
 # hurricane-frequency on HURDAT2) is more appropriate for event count.
 
-name = "finance_py_cat_bond_aai_freq"
-description = "Prices a catastrophe bond from an insurance AAI and a separately-modelled annual event rate. Rescales AAI by lambda_annual / Σ(per-event freq) before deriving the yield. Pair with OasisLMF (AAI + per-event table) and hurricane-frequency."
+name = "Cat Bond Pricer (AAI + Frequency)"
+description = "Prices a catastrophe bond from an insured AAI rescaled by a separately-modelled annual event rate — AAI × (lambda_annual / Σ per-event frequency) — before deriving the yield. Use when the bond's contractual peril/region doesn't match the hazard model's implicit frequency. Pair with Insured Loss Layer + Hurricane Landfall Rate."
 
 run = "docker run --rm -v \"$PWD/run:/run\" ${IMAGE} ${ARGS} > run/bond_metrics.output.json"
 image = "domokane/financepy:latest"

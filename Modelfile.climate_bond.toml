@@ -14,8 +14,8 @@
 # See Modelfile.cat_bond_aai.toml and Modelfile.cat_bond_aai_freq.toml for
 # the catastrophe-bond variants.
 
-name = "finance_py_climate_bond"
-description = "Prices a 10-year fixed-coupon bond by treating a climate risk premium as the yield-to-maturity. Pair with an upstream that emits `climate_risk_premium` (DicePy)."
+name = "Climate Bond Pricer"
+description = "Prices a 10-year fixed-coupon bond by treating an upstream climate risk premium as the yield-to-maturity (FinancePy engine). Pair with a model that emits `climate_risk_premium` — e.g. Climate Damage Premium (DICE), downstream of Emissions Climate Projection (FaIR)."
 
 run = "docker run --rm -v \"$PWD/run:/run\" ${IMAGE} ${ARGS} > run/bond_metrics.output.json"
 image = "domokane/financepy:latest"

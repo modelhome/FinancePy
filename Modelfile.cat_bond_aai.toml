@@ -9,8 +9,8 @@
 # event frequency through OasisLMF's AAI. Use Modelfile.cat_bond_aai_freq.toml
 # when you have a separately-modelled landfall rate to rescale by.
 
-name = "finance_py_cat_bond_aai"
-description = "Prices a 10-year fixed-coupon bond from an insurance Average Annual Loss. Pair with an upstream that emits `insured_aai_usd` (OasisLMF after applying policy terms to a CLIMADA loss table)."
+name = "Cat Bond Pricer (AAI)"
+description = "Prices a 10-year fixed-coupon catastrophe bond from an Average Annual Insured Loss: derives an expected-loss yield spread (AAI / TIV) over a risk-free baseline and prices with FinancePy. Uses the hazard model's implicit event frequency. Pair with Insured Loss Layer (OasisLMF)."
 
 run = "docker run --rm -v \"$PWD/run:/run\" ${IMAGE} ${ARGS} > run/bond_metrics.output.json"
 image = "domokane/financepy:latest"
