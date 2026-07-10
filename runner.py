@@ -216,6 +216,16 @@ def run(params: dict) -> dict:
         result["macauley_duration"] = bond.macauley_duration(settle_dt, ytm_calc)
         result["modified_duration"] = bond.modified_duration(settle_dt, ytm_calc)
         result["convexity"] = bond.convexity_from_ytm(settle_dt, ytm_calc)
+    elif "insured_aai_usd" in params:
+        # AAI was supplied but we couldn't derive a yield — the only reason is a
+        # missing/zero total insured value. Say so, rather than the generic
+        # ytm/clean_price message, which is confusing for the AAI pricing path.
+        raise ValueError(
+            "insured_aai_usd was provided but pricing needs a positive "
+            "total_insured_value_usd (or total_exposed_value_usd) to derive the "
+            "expected-loss yield spread. Provide one of those, or pass an explicit "
+            "'ytm' or 'clean_price'."
+        )
     else:
         raise ValueError("Provide either 'ytm' or 'clean_price'")
 

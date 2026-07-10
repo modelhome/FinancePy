@@ -36,11 +36,26 @@ description = "Insurance loss distribution after OasisLMF FM, including the per-
 
 [inputs.schema]
 type = "object"
-# event_insured_loss_table is required here (unlike cat_bond_aai) because
-# the rescaling needs each event's frequency to derive lambda_implicit.
-required = ["insured_aai_usd", "event_insured_loss_table"]
+# Like cat_bond_aai, the pricing divides the loss by a total insured value, so
+# total_insured_value_usd is required. event_insured_loss_table is also required
+# (unlike cat_bond_aai) because the rescaling needs each event's frequency to
+# derive lambda_implicit. The `default`s seed a realistic, runnable
+# "Example to paste".
+required = ["insured_aai_usd", "total_insured_value_usd", "event_insured_loss_table"]
 properties.insured_aai_usd.type = "number"
+properties.insured_aai_usd.description = "Average Annual Insured Loss (expected annual loss) in USD"
+properties.insured_aai_usd.default = 500000000
+properties.total_insured_value_usd.type = "number"
+properties.total_insured_value_usd.description = "Total Insured Value (TIV) in USD; the loss is divided by this to derive the yield spread"
+properties.total_insured_value_usd.default = 200000000000
 properties.event_insured_loss_table.type = "array"
+properties.event_insured_loss_table.description = "Per-event insured losses with annual frequency; the frequencies sum to the hazard model's implicit annual rate, which is rescaled to lambda_annual"
+properties.event_insured_loss_table.items.type = "object"
+properties.event_insured_loss_table.items.required = ["insured_loss_usd", "frequency"]
+properties.event_insured_loss_table.items.properties.insured_loss_usd.type = "number"
+properties.event_insured_loss_table.items.properties.insured_loss_usd.default = 5000000000
+properties.event_insured_loss_table.items.properties.frequency.type = "number"
+properties.event_insured_loss_table.items.properties.frequency.default = 0.04
 
 [[inputs]]
 name = "hurricane_frequency"
@@ -50,6 +65,8 @@ description = "Independently-modelled annual landfall rate (e.g. from hurricane-
 type = "object"
 required = ["lambda_annual"]
 properties.lambda_annual.type = "number"
+properties.lambda_annual.description = "Independently-modelled annual landfall rate (events per year)"
+properties.lambda_annual.default = 0.05
 
 [[outputs]]
 name = "bond_metrics"
