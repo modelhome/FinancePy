@@ -43,7 +43,15 @@ type = "object"
 # present in every DicePy run; adjusted_ytm and ytm are accepted but
 # optional fall-throughs the runner also recognises.
 required = ["climate_risk_premium"]
-properties.climate_risk_premium.type = "number"
+# An object, not a number: DicePy emits the premium per scenario/config as
+# {scenario: {config: decimal_spread}}, which is what the runner consumes
+# (_mean_nested collapses it to one scalar YTM). Declaring it as a number
+# both mis-describes the runner and mismatches DicePy's declared output type.
+# The `default` seeds the auto-generated "example to paste" with a premium of
+# the order DicePy actually produces (~50 bps), so the example runs as-is.
+properties.climate_risk_premium.type = "object"
+properties.climate_risk_premium.description = "Decimal yield spread per scenario and config — {scenario: {config: float}}, as emitted by Climate Damage Premium (DICE). 0.005 = 50 bps."
+properties.climate_risk_premium.default = { ramp = { central = 0.005 } }
 
 [[outputs]]
 name = "bond_metrics"
