@@ -13,9 +13,25 @@
 #
 # See Modelfile.cat_bond_aai.toml and Modelfile.cat_bond_aai_freq.toml for
 # the catastrophe-bond variants.
+#
+# Semantic annotations (`unit`, plus the model-level fields below) are
+# additive: they are unknown keywords to a JSON Schema validator and to
+# every Modelfile consumer that predates them, so this file validates
+# exactly as it did before they were added. Every unit here is taken from
+# runner.py's documented output basis — see the note on `convexity`, which
+# is deliberately left un-annotated.
 
 name = "Climate Bond Pricer"
 description = "Prices a 10-year fixed-coupon bond by treating an upstream climate risk premium as the yield-to-maturity (FinancePy engine). Pair with a model that emits `climate_risk_premium` — e.g. Climate Damage Premium (DICE), downstream of Emissions Climate Projection (FaIR)."
+
+# Results are meaningful only inside this envelope. The bond itself is not an
+# input on this path: runner.py supplies a 10-year 4% semi-annual ACT/ACT
+# bond (issued 2024-01-01, settled 2024-01-03) whenever the spec is absent.
+validity_domain = "A single 10-year fixed-coupon bond priced off one flat yield. When only climate_risk_premium arrives, that premium becomes the entire yield-to-maturity — it is not added to a baseline rate — and values are averaged across every scenario and config into one scalar before pricing."
+not_for = "Floating-rate, callable, or otherwise option-embedded bonds; any valuation needing a yield curve rather than a single flat yield; and reading the output as a distribution, since scenario-level dispersion is averaged away before pricing."
+determinism = "deterministic"
+expected_runtime = "subsecond"
+provenance = "FinancePy (github.com/domokane/FinancePy) — financepy.products.bonds.bond.Bond analytics: clean_price_from_ytm, dirty_price_from_ytm, accrued_interest, macauley_duration, modified_duration, convexity_from_ytm."
 
 run = "docker run --rm -v \"$PWD/run:/run\" ${IMAGE} ${ARGS} > run/bond_metrics.output.json"
 image = "domokane/financepy:latest"
@@ -52,17 +68,54 @@ required = ["climate_risk_premium"]
 properties.climate_risk_premium.type = "object"
 properties.climate_risk_premium.description = "Decimal yield spread per scenario and config — {scenario: {config: float}}, as emitted by Climate Damage Premium (DICE). 0.005 = 50 bps."
 properties.climate_risk_premium.default = { ramp = { central = 0.005 } }
+# The scenario and config keys are caller-chosen, so there is no declared
+# leaf node to carry the unit. It sits on the enclosing object and describes
+# the scalars inside it: dimensionless decimal fractions, not percentages
+# (_mean_nested feeds the mean straight into FinancePy as a decimal yield).
+properties.climate_risk_premium.unit = "1"
 
 [[outputs]]
 name = "bond_metrics"
+description = "Bond analytics for the priced instrument: prices on a per-100-face basis, durations in years, and the yield used."
 
 [outputs.schema]
 type = "object"
 required = ["clean_price", "dirty_price", "accrued_interest", "macauley_duration", "modified_duration", "convexity", "ytm"]
+
+# Prices and accrued interest share one basis. runner.py documents
+# clean_price as "clean price per 100 face value" and dirty_price as
+# "clean + accrued interest", so accrued_interest is necessarily on the same
+# per-100 basis — which is the market convention of quoting a bond as a
+# percentage of face value.
 properties.clean_price.type = "number"
+properties.clean_price.description = "Clean price, excluding accrued interest."
+properties.clean_price.unit = "% of face"
+
 properties.dirty_price.type = "number"
+properties.dirty_price.description = "Clean price plus accrued interest — what a buyer actually settles."
+properties.dirty_price.unit = "% of face"
+
 properties.accrued_interest.type = "number"
+properties.accrued_interest.description = "Coupon accrued since the last payment date, on the same per-100-face basis as the prices."
+properties.accrued_interest.unit = "% of face"
+
 properties.macauley_duration.type = "number"
+properties.macauley_duration.description = "Macaulay duration — the cash-flow-weighted average time to payment."
+properties.macauley_duration.unit = "a"
+
 properties.modified_duration.type = "number"
+properties.modified_duration.description = "Modified duration — first-order price sensitivity to a change in yield."
+properties.modified_duration.unit = "a"
+
+# Deliberately carries no `unit`. Convexity is dimensionally time-squared,
+# but the quoted scaling is convention-dependent (raw vs divided by 100) and
+# neither runner.py nor the FinancePy call documents which applies here. An
+# absent unit is a visible gap; a guessed one would be a confident falsehood
+# for anything reading this contract. Restore it once the scaling is checked
+# against FinancePy's implementation.
 properties.convexity.type = "number"
+properties.convexity.description = "Convexity — second-order price sensitivity to a change in yield. Scaling convention not yet confirmed; see the Modelfile comment."
+
 properties.ytm.type = "number"
+properties.ytm.description = "The yield-to-maturity used for pricing, or back-solved from clean_price when one was supplied."
+properties.ytm.unit = "1"
